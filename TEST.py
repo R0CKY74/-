@@ -100,6 +100,6 @@ def test_registration_fields_simple(last_name, first_name, patronymic, date, ema
     assert personal_checkbox.is_selected() == True
     assert familiarized_checkbox.is_selected() == True
 
-    print(f"✓ Тест пройден: {last_name}, {first_name}, {patronymic}, {date}, {email}, {optional}, {phone}, {snils}, {profession}, {RU}, {city}, {organization}, {school}, {grade}")
+    print(f"✓ Тест пройден: {last_name}, {first_name}, {patronymic}, {date}, {email}, {optional}, {phone}, {snils}, {profession}, {country}, {city}, {organization}, {school}, {grade}")
 
     driver.quit()
