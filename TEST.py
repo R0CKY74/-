@@ -5,101 +5,117 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
-@pytest.mark.parametrize("last_name, first_name, patronymic, date, email, optional, phone, snils, "
-                         "profession, country, city, organization, school, grade", [
-    ("Иванов", "Иван", "Иванович", "01.01.2000", "ivanov@mail.ru", "v00.000.000", "+79991234567",
-     "41825422769", "Программист", "Россия", "Москва", "ООО", "Средняя школа №1", "10"),  # Валидные данные
-    ("Иванов", "Иван", "Иванович", "01.01.2000", "ivanovmail.ru", "v00.000.000", "+79991234567",
-     "41825422769", "Программист", "Россия", "Москва", "ООО", "Средняя школа №1", "10"),  # Невалидный email
-    ("Иванов", "Иван", "Иванович", "01.01.2000", "ivanov@mail.ru", "v11.11.111", "+79991234567",
-     "41825422769", "Программист", "Россия", "Москва", "ООО", "Средняя школа №1", "10"),  # Некорректным форматом ВОШ-логина
-
-])
-def test_registration_fields_simple(last_name, first_name, patronymic, date, email, optional,
-                                    phone, snils, profession, country, city, organization, school, grade):
-
+def setup_driver():
+    """Настройка драйвера"""
     driver = webdriver.Chrome()
     driver.maximize_window()
     driver.implicitly_wait(5)
-    wait = WebDriverWait(driver, 10)
+    return driver, WebDriverWait(driver, 10)
 
-    driver.get('https://uts.sirius.online//#/auth/register/qainternship')
 
-    # Заполняем поля
-    last_name_field = driver.find_element(By.CSS_SELECTOR, ".test-locator-sf-lastName input")
-    last_name_field.send_keys(last_name)
+def fill_text_field(driver, css_selector, value):
+    """Заполнение текстового поля"""
+    field = driver.find_element(By.CSS_SELECTOR, css_selector)
+    field.send_keys(value)
+    return field
 
-    first_name_field = driver.find_element(By.CSS_SELECTOR, ".test-locator-sf-firstName input")
-    first_name_field.send_keys(first_name)
 
-    patronymic_field = driver.find_element(By.CSS_SELECTOR, ".test-locator-sf-patronymic input")
-    patronymic_field.send_keys(patronymic)
+def click_checkbox(driver, css_selector):
+    """Клик по чекбоксу"""
+    checkbox = driver.find_element(By.CSS_SELECTOR, css_selector)
+    if not checkbox.is_selected():
+        checkbox.click()
+    return checkbox
 
-    date_field = driver.find_element(By.CSS_SELECTOR, ".test-locator-sf-birth-date input")
-    date_field.send_keys(date)
 
-    email_field = driver.find_element(By.CSS_SELECTOR, ".test-locator-sf-email input")
-    email_field.send_keys(email)
+def fill_registration_form(driver, data):
+    """Заполнение всей формы регистрации"""
+    fields = {
+        ".test-locator-sf-lastName input": data['last_name'],
+        ".test-locator-sf-firstName input": data['first_name'],
+        ".test-locator-sf-patronymic input": data['patronymic'],
+        ".test-locator-sf-birth-date input": data['date'],
+        ".test-locator-sf-email input": data['email'],
+        ".test-locator-sf-vosh-login-optional input": data['optional'],
+        ".test-locator-sf-phone input": data['phone'],
+        ".test-locator-sf-snils-opt input": data['snils'],
+        ".test-locator-sf-profession input": data['profession'],
+        ".test-locator-sf-school-city input": data['city'],
+        ".test-locator-sf-school-organization input": data['organization'],
+        ".test-locator-sf-school-school input": data['school'],
+        ".test-locator-sf-school-grade input": data['grade']
+    }
 
-    optional_field = driver.find_element(By.CSS_SELECTOR, ".test-locator-sf-vosh-login-optional input")
-    optional_field.send_keys(optional)
+    filled_fields = {}
+    for selector, value in fields.items():
+        filled_fields[selector] = fill_text_field(driver, selector, value)
 
-    phone_field = driver.find_element(By.CSS_SELECTOR, ".test-locator-sf-phone input")
-    phone_field.send_keys(phone)
+    return filled_fields
 
-    snils_field = driver.find_element(By.CSS_SELECTOR, ".test-locator-sf-snils-opt input")
-    snils_field.send_keys(snils)
 
-    profession_field = driver.find_element(By.CSS_SELECTOR, ".test-locator-sf-profession input")
-    profession_field.send_keys(profession)
+def check_fields_values(fields, data):
+    """Проверка значений полей"""
+    mapping = {
+        ".test-locator-sf-lastName input": 'last_name',
+        ".test-locator-sf-firstName input": 'first_name',
+        ".test-locator-sf-patronymic input": 'patronymic',
+        ".test-locator-sf-birth-date input": 'date',
+        ".test-locator-sf-email input": 'email',
+        ".test-locator-sf-vosh-login-optional input": 'optional',
+        ".test-locator-sf-phone input": 'phone',
+        ".test-locator-sf-snils-opt input": 'snils',
+        ".test-locator-sf-profession input": 'profession',
+        ".test-locator-sf-school-city input": 'city',
+        ".test-locator-sf-school-organization input": 'organization',
+        ".test-locator-sf-school-school input": 'school',
+        ".test-locator-sf-school-grade input": 'grade'
+    }
 
-    country_field = driver.find_element(By.CSS_SELECTOR, "[class*='reset'] [value='RU']")
-    country_field.click()
+    for selector, field in fields.items():
+        expected_value = data[mapping[selector]]
+        assert field.get_attribute("value") == expected_value, \
+            f"Поле {selector} содержит '{field.get_attribute('value')}', а ожидалось '{expected_value}'"
 
-    city_field = driver.find_element(By.CSS_SELECTOR, ".test-locator-sf-school-city input")
-    city_field.send_keys(city)
 
-    organization_field = driver.find_element(By.CSS_SELECTOR, ".test-locator-sf-school-organization input")
-    organization_field.send_keys(organization)
+@pytest.mark.parametrize("data", [
+    {"last_name": "Иванов", "first_name": "Иван", "patronymic": "Иванович", "date": "01.01.2000", "email": "ivanov@mail.ru",
+     "optional": "v00.000.000", "phone": "+79991234567", "snils": "41825422769", "profession": "Программист", "city": "Москва",
+     "organization": "ООО", "school": "Средняя школа №1", "grade": "10"},  # Валидные данные
+    {"last_name": "Иванов", "first_name": "Иван", "patronymic": "Иванович", "date": "01.01.2000", "email": "ivanovmail.ru",
+     "optional": "v00.000.000", "phone": "+79991234567", "snils": "41825422769", "profession": "Программист", "city": "Москва",
+     "organization": "ООО", "school": "Средняя школа №1", "grade": "10"},  # Невалидный email
+    {"last_name": "Иванов", "first_name": "Иван", "patronymic": "Иванович", "date": "01.01.2000", "email": "ivanov@mail.ru",
+     "optional": "v0.000.000", "phone": "+79991234567", "snils": "41825422769", "profession": "Программист", "city": "Москва",
+     "organization": "ООО", "school": "Средняя школа №1", "grade": "10"},  # Некорректный ВОШ-логин
+])
+def test_registration_fields_simple(data):
+    driver, wait = setup_driver()
 
-    school_field = driver.find_element(By.CSS_SELECTOR, ".test-locator-sf-school-school input")
-    school_field.send_keys(school)
+    try:
+        driver.get('https://uts.sirius.online//#/auth/register/qainternship')
 
-    grade_field = driver.find_element(By.CSS_SELECTOR, ".test-locator-sf-school-grade input")
-    grade_field.send_keys(grade)
+        # Заполнение формы
+        fields = fill_registration_form(driver, data)
 
-    confirmation_checkbox = driver.find_element(By.CSS_SELECTOR, "[class *='outline'][wfd-id='id13']")
-    confirmation_checkbox.click()
+        # Дополнительные элементы
+        country_field = driver.find_element(By.CSS_SELECTOR, "[class*='reset'] [value='RU']")
+        country_field.click()
 
-    personal_checkbox = driver.find_element(By.CSS_SELECTOR, "[class *='outline'][wfd-id='id14']")
-    personal_checkbox.click()
+        confirmation_checkbox = click_checkbox(driver, "[class *='outline'][wfd-id='id13']")
+        personal_checkbox = click_checkbox(driver, "[class *='outline'][wfd-id='id14']")
+        familiarized_checkbox = click_checkbox(driver, "[class *='outline'][wfd-id='id15']")
 
-    familiarized_checkbox = driver.find_element(By.CSS_SELECTOR, "[class *='outline'][wfd-id='id15']")
-    familiarized_checkbox.click()
+        # Проверка кнопки
+        button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".ui-button__content")))
 
-    button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".ui-button__content")))
+        # Проверки
+        check_fields_values(fields, data)
+        assert country_field.is_selected() == True
+        assert confirmation_checkbox.is_selected() == True
+        assert personal_checkbox.is_selected() == True
+        assert familiarized_checkbox.is_selected() == True
 
-    # Проверяем
-    assert last_name_field.get_attribute("value") == last_name
-    assert first_name_field.get_attribute("value") == first_name
-    assert patronymic_field.get_attribute("value") == patronymic
-    assert date_field.get_attribute("value") == date
-    assert email_field.get_attribute("value") == email
-    assert optional_field.get_attribute("value") == optional
-    assert phone_field.get_attribute("value") == phone
-    assert snils_field.get_attribute("value") == snils
-    assert profession_field.get_attribute("value") == profession
-    assert country_field.is_selected() == True
-    assert city_field.get_attribute("value") == city
-    assert organization_field.get_attribute("value") == organization
-    assert school_field.get_attribute("value") == school
-    assert grade_field.get_attribute("value") == grade
+        print(f"✓ Тест пройден для {'Валидные данные'}, {'Невалидный email'}, {'Некорректный ВОШ-логин'}")
 
-    # Проверяем чекбоксы
-    assert confirmation_checkbox.is_selected() == True
-    assert personal_checkbox.is_selected() == True
-    assert familiarized_checkbox.is_selected() == True
-
-    print(f"✓ Тест пройден: {last_name}, {first_name}, {patronymic}, {date}, {email}, {optional}, {phone}, {snils}, {profession}, {country}, {city}, {organization}, {school}, {grade}")
-
-    driver.quit()
+    finally:
+        driver.quit()
